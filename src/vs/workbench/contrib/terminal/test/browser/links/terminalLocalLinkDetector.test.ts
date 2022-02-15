@@ -16,6 +16,7 @@ import { Terminal } from 'xterm';
 
 const unixLinks = [
 	'/foo',
+	'file:///foo',
 	'~/foo',
 	'./foo',
 	'./$foo',
@@ -30,6 +31,8 @@ const windowsLinks = [
 	'c:\\foo',
 	'\\\\?\\c:\\foo',
 	'c:/foo',
+	'file://c:/foo',
+	'file:///c:/foo',
 	'.\\foo',
 	'./foo',
 	'./$foo',

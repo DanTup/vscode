@@ -31,20 +31,28 @@ const enum Constants {
 	MaxResolvedLinkLength = 1024,
 }
 
+// Optional file:// prefix
+const fileUriPrefix = '(?:file:\\/\\/)?';
 const pathPrefix = '(\\.\\.?|\\~)';
 const pathSeparatorClause = '\\/';
+// Disallow multiple slashes as prefix (else file:/// includes multiple slashes)
+const nonPathSeparatorClause = '[^\\/]';
 // '":; are allowed in paths but they are often separators so ignore them
 // Also disallow \\ to prevent a catastropic backtracking case #24795
 const excludedPathCharactersClause = '[^\\0\\s!`&*()\\[\\]\'":;\\\\]';
+// Additionally exclude / from the leading part to avoid picking up multiple slashes (file:///foo).
+const excludedLeadingPathCharactersClause = '[^\\0\\s!`&*()\\[\\]\'":;\\\\\/]';
 /** A regex that matches paths in the form /foo, ~/foo, ./foo, ../foo, foo/bar */
-export const unixLocalLinkClause = '((' + pathPrefix + '|(' + excludedPathCharactersClause + ')+)?(' + pathSeparatorClause + '(' + excludedPathCharactersClause + ')+)+)';
+export const unixLocalLinkClause = '(' + fileUriPrefix + '(' + pathPrefix + '|(' + excludedLeadingPathCharactersClause + ')+)?(' + pathSeparatorClause + nonPathSeparatorClause + '(' + excludedPathCharactersClause + ')+)+)';
 
+// Optional file:// or file:/// prefix
+const winFileUriPrefix = '(?:file:\\/\\/\\/?)?';
 export const winDrivePrefix = '(?:\\\\\\\\\\?\\\\)?[a-zA-Z]:';
 const winPathPrefix = '(' + winDrivePrefix + '|\\.\\.?|\\~)';
 const winPathSeparatorClause = '(\\\\|\\/)';
 const winExcludedPathCharactersClause = '[^\\0<>\\?\\|\\/\\s!`&*()\\[\\]\'":;]';
 /** A regex that matches paths in the form \\?\c:\foo c:\foo, ~\foo, .\foo, ..\foo, foo\bar */
-export const winLocalLinkClause = '((' + winPathPrefix + '|(' + winExcludedPathCharactersClause + ')+)?(' + winPathSeparatorClause + '(' + winExcludedPathCharactersClause + ')+)+)';
+export const winLocalLinkClause = '((' + winFileUriPrefix + winPathPrefix + '|(' + winExcludedPathCharactersClause + ')+)?(' + winPathSeparatorClause + '(' + winExcludedPathCharactersClause + ')+)+)';
 
 /** As xterm reads from DOM, space in that case is nonbreaking char ASCII code - 160,
 replacing space with nonBreakningSpace or space ASCII code - 32. */
