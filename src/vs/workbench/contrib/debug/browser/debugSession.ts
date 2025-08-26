@@ -1129,12 +1129,19 @@ export class DebugSession implements IDebugSession {
 			}
 		}));
 
-		this.rawListeners.add(this.raw.onDidContinued(event => {
+		this.rawListeners.add(this.raw.onDidContinued(async event => {
 			const allThreads = event.body.allThreadsContinued !== false;
 
 			statusQueue.cancel(allThreads ? undefined : [event.body.threadId]);
 
 			const threadId = allThreads ? undefined : event.body.threadId;
+
+			// If we get a continued event for a specific thread that we don't know about yet,
+			// we need to force waiting on a fetchThreads to ensure the thread is available
+			if (typeof threadId === 'number' && !this.threads.has(threadId)) {
+				await this.fetchThreads();
+			}
+
 			if (typeof threadId === 'number') {
 				this.stoppedDetails = this.stoppedDetails.filter(sd => sd.threadId !== threadId);
 				const tokens = this.cancellationMap.get(threadId);
@@ -1339,6 +1346,12 @@ export class DebugSession implements IDebugSession {
 		// anything
 		if (event.hitBreakpointIds) {
 			this._waitToResume = this.enableDependentBreakpoints(event.hitBreakpointIds);
+		}
+
+		// If we get a stopped event for a specific thread that we don't know about yet,
+		// we need to force waiting on a fetchThreads to ensure the thread is available
+		if (typeof event.threadId === 'number' && !this.threads.has(event.threadId)) {
+			await this.fetchThreads(event);
 		}
 
 		this.statusQueue.run(
